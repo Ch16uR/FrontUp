@@ -79,6 +79,7 @@ MainWindow::MainWindow(QWidget *parent) :
         QString filename = ui->PathFileLine->text();
         if (!filename.isEmpty())
         {
+            sqlqueries.clear();
             ParserXCH *xch = new ParserXCH();
             xch->OpenFile(filename);
             sqlqueries = xch->GetSQLQueries();
@@ -285,6 +286,7 @@ void MainWindow::on_buttonImportCSV_clicked()
 
 void MainWindow::on_applyCustomButton_clicked()
 {
+    sqlqueries.clear();
     QString text = ui->CustomSQLEdit->toPlainText();
     QStringList list = text.split(";");
     for (int i =0; i<list.size(); i++)

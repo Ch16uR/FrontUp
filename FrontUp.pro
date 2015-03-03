@@ -8,6 +8,7 @@ QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+VERSION = 0.9.2
 TARGET = FrontUp
 TEMPLATE = app
 
@@ -20,3 +21,6 @@ HEADERS  += mainwindow.h \
     parserxch.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES +=
+RC_FILE = frontup.rc
