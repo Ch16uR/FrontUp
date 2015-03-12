@@ -8,7 +8,7 @@ QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-VERSION = 0.9.2
+VERSION = 0.9.3
 TARGET = FrontUp
 TEMPLATE = app
 

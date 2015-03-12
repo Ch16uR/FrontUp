@@ -3,6 +3,7 @@
 
 #include <QFileDialog>
 #include <QDebug>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -96,18 +97,29 @@ MainWindow::MainWindow(QWidget *parent) :
 
     void MainWindow::on_runButton_clicked()
     {
-        ui->outEdit->clear();
-        ui->progressBar->setValue(0);
-        ui->tabWidget->setCurrentIndex(1);
-        ui->tabWidget->setTabEnabled(0,false);
-        ui->tabWidget->setTabEnabled(2,false);
-        ui->tabWidget->setTabEnabled(3,false);
+        int size = ui->tableView->model()->rowCount();
+        if (size > 0)
+        {
+            ui->outEdit->clear();
+            ui->progressBar->setValue(0);
+            ui->tabWidget->setCurrentIndex(1);
+            ui->tabWidget->setTabEnabled(0,false);
+            ui->tabWidget->setTabEnabled(2,false);
+            ui->tabWidget->setTabEnabled(3,false);
 
-        this->runApply();
-        ui->progressBar->setValue(100);
-        ui->tabWidget->setTabEnabled(0,true);
-        ui->tabWidget->setTabEnabled(2,true);
-        ui->tabWidget->setTabEnabled(3,true);
+            this->runApply();
+            ui->progressBar->setValue(100);
+            ui->tabWidget->setTabEnabled(0,true);
+            ui->tabWidget->setTabEnabled(2,true);
+            ui->tabWidget->setTabEnabled(3,true);
+        }
+        else
+        {
+            QMessageBox msgBox(this);
+            msgBox.setIcon(QMessageBox::Information);
+            msgBox.setText("Пожалуйста, добавьте в спискок базу данных.");
+            msgBox.exec();
+        }
 
     }
 
@@ -139,6 +151,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     void MainWindow::runApply()
     {
+        int size = ui->tableView->model()->rowCount();
+
         ui->outEdit->insertHtml("<H3>Запуск обработки!</H3>");
 
         QString name,host,path,login,password;
@@ -146,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent) :
         QSqlQuery q1(targetdb);
         QSqlQuery q2(targetdb);
         QString err;
-        int size = ui->tableView->model()->rowCount();
+
         float halfPercent=100/size;
 
         qDebug() << size;
@@ -210,97 +224,97 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     }
 
-void MainWindow::on_buttonExportCSV_clicked()
-{
-    QSqlQuery q(localdb);
-    QString filename = QFileDialog::getSaveFileName(this,"Экспорт списка баз данных","",tr("Файл экспорта (*.txt)"));
-    QFile file(filename);
-    QTextStream out(&file);
-    out.setCodec("CP1251");
-    if (file.open(QIODevice::WriteOnly))
+    void MainWindow::on_buttonExportCSV_clicked()
     {
-
-
-    }
-    else
-    {
-        qDebug() << file.errorString();
-    }
-
-    if (q.exec("SELECT * FROM DATEBASES"))
-    {
-        while(q.next())
+        QSqlQuery q(localdb);
+        QString filename = QFileDialog::getSaveFileName(this,"Экспорт списка баз данных","",tr("Файл экспорта (*.txt)"));
+        QFile file(filename);
+        QTextStream out(&file);
+        out.setCodec("CP1251");
+        if (file.open(QIODevice::WriteOnly))
         {
-            out << q.value(1).toString()+";";
-            out << q.value(2).toString()+";";
-            out << q.value(3).toString()+";";
-            out << q.value(4).toString()+";";
-            out << q.value(5).toString()+";";
-            out << "\r\n";
+
+
         }
-    }
-    else
-    {
-        qDebug() << "Ошибка: "+q.lastError().text();
-    }
-    file.close();
-}
-
-void MainWindow::on_buttonImportCSV_clicked()
-{
-    QSqlQuery q(localdb);
-    QString filename = QFileDialog::getOpenFileName(this,tr("Импорт списка баз данных"),"",tr("Файл для импорта (*.txt)"));
-    QFile file(filename);
-
-    QString line;
-    QStringList list;
-    QString name,host,dir,user,pwd;
-    if (file.open(QIODevice::ReadOnly))
-    {
-       QTextStream text(&file);
-       while(!text.atEnd())
-       {
-
-           line = text.readLine();
-
-           list = line.split(";");
-
-           name = list.value(0);
-           host =list.value(1);
-           dir =list.value(2);
-           user =list.value(3);
-           pwd =list.value(4);
-
-
-           q.exec("INSERT INTO DATEBASES ( NAME, HOST, PATH, USERNAME, PWD) VALUES ('"+name+"', '"+host+"', '"+dir+"', '"+user+"', '"+pwd+"');");
-       }
-
-    }
-    else
-    {
-        qDebug() << file.errorString() << "Error";
-    }
-     file.close();
-     model->select();
-}
-
-void MainWindow::on_applyCustomButton_clicked()
-{
-    sqlqueries.clear();
-    QString text = ui->CustomSQLEdit->toPlainText();
-    QStringList list = text.split(";");
-    for (int i =0; i<list.size(); i++)
-    {
-
-        if (list.value(i) != "" && list.value(i) != "\n")
+        else
         {
-            qDebug() << list.value(i);
-            sqlqueries.append(list.value(i));
+            qDebug() << file.errorString();
         }
+
+        if (q.exec("SELECT * FROM DATEBASES"))
+        {
+            while(q.next())
+            {
+                out << q.value(1).toString()+";";
+                out << q.value(2).toString()+";";
+                out << q.value(3).toString()+";";
+                out << q.value(4).toString()+";";
+                out << q.value(5).toString()+";";
+                out << "\r\n";
+            }
+        }
+        else
+        {
+            qDebug() << "Ошибка: "+q.lastError().text();
+        }
+        file.close();
     }
 
-    ui->statusBar->showMessage("Будет выполнен произвольный SQL запрос");
-    ui->runButton->setEnabled(true);
-    importfromfile = false;
-    importfromCustomSql = true;
-}
+    void MainWindow::on_buttonImportCSV_clicked()
+    {
+        QSqlQuery q(localdb);
+        QString filename = QFileDialog::getOpenFileName(this,tr("Импорт списка баз данных"),"",tr("Файл для импорта (*.txt)"));
+        QFile file(filename);
+
+        QString line;
+        QStringList list;
+        QString name,host,dir,user,pwd;
+        if (file.open(QIODevice::ReadOnly))
+        {
+           QTextStream text(&file);
+           while(!text.atEnd())
+           {
+
+               line = text.readLine();
+
+               list = line.split(";");
+
+               name = list.value(0);
+               host =list.value(1);
+               dir =list.value(2);
+               user =list.value(3);
+               pwd =list.value(4);
+
+
+               q.exec("INSERT INTO DATEBASES ( NAME, HOST, PATH, USERNAME, PWD) VALUES ('"+name+"', '"+host+"', '"+dir+"', '"+user+"', '"+pwd+"');");
+           }
+
+        }
+        else
+        {
+            qDebug() << file.errorString() << "Error";
+        }
+         file.close();
+         model->select();
+    }
+
+    void MainWindow::on_applyCustomButton_clicked()
+    {
+        sqlqueries.clear();
+        QString text = ui->CustomSQLEdit->toPlainText();
+        QStringList list = text.split(";");
+        for (int i =0; i<list.size(); i++)
+        {
+
+            if (list.value(i) != "" && list.value(i) != "\n")
+            {
+                qDebug() << list.value(i);
+                sqlqueries.append(list.value(i));
+            }
+        }
+
+        ui->statusBar->showMessage("Будет выполнен произвольный SQL запрос");
+        ui->runButton->setEnabled(true);
+        importfromfile = false;
+        importfromCustomSql = true;
+    }
