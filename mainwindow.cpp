@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {    
     ui->setupUi(this);
+    ui->tabWidget->setCurrentIndex(0);
     importfromfile = false;
     importfromCustomSql = false;
 
@@ -91,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->runButton->setEnabled(true);
             importfromfile = true;
             importfromCustomSql = false;
+            ui->tabWidget->setCurrentIndex(0);
         }
     }
 
@@ -160,6 +162,7 @@ MainWindow::MainWindow(QWidget *parent) :
         QSqlQuery q1(targetdb);
         QSqlQuery q2(targetdb);
         QString err;
+        QStringList errors;
 
         float halfPercent=100/size;
 
@@ -173,20 +176,23 @@ MainWindow::MainWindow(QWidget *parent) :
             path = path+"\\MAIN.GDB";
             login = ui->tableView->model()->data(ui->tableView->model()->index(i,4)).toString();
             password = ui->tableView->model()->data(ui->tableView->model()->index(i,5)).toString();
-
+            ui->outEdit->ensureCursorVisible();
             targetdb.setHostName(host);
             targetdb.setDatabaseName(path);
             targetdb.setUserName(login);
             targetdb.setPassword(password);
 
             ui->statusBar->showMessage(name);
-            ui->outEdit->insertHtml("<br><p>Подключение к базе данных : "+name+"</p>");
+           // ui->outEdit->append("<br><p>Подключение к базе данных : "+name+"</p>");
+            ui->outEdit->insertPlainText("Подключение к базе данных : "+name);
+            ui->outEdit->update();
             targetdb.setConnectOptions("ISC_DPB_LC_CTYPE=UNICODE_FFS");
             if (!targetdb.open())
             {
                 ui->progressBar->setValue((i+1)*halfPercent);
                 err = (targetdb.lastError().nativeErrorCode());
-                ui->outEdit->insertHtml("<br><strong>Ошибка при подключении к базе данных! Код ошибки  "+err+"</strong>");
+                //ui->outEdit->insertHtml("<br><strong>Ошибка при подключении к базе данных! Код ошибки  "+err+"</strong>");
+                errors.append(name);
             }
             else
             {
@@ -200,6 +206,43 @@ MainWindow::MainWindow(QWidget *parent) :
                         {
                             ui->outEdit->insertHtml("<br><strong>"+q1.lastQuery()+"</strong>");
                             ui->outEdit->insertHtml("<br><strong>"+q1.lastError().text()+"</strong>");
+                        }
+                        else
+                        {
+
+                            if (q1.isSelect() && importfromCustomSql)
+                            {
+                                QString table;
+                                table.clear();
+                                table.append("<TABLE BORDER = 2>");
+                                int sizeQuery = q1.record().count();
+                                while (q1.next())
+                                {
+                                    if (q1.at() == 0)
+                                    {
+
+                                        table.append("<TR>");
+                                       for (int k = 0; k < sizeQuery;k++)
+                                       {
+                                           table.append("<TD>");
+                                           table.append(q1.record().fieldName(k));
+                                           table.append("</TD>");
+                                       }
+                                        table.append("</TR>");
+                                    }
+                                   table.append("<TR>");
+                                    for (int k = 0; k < sizeQuery;k++)
+                                    {
+                                       table.append("<TD>");
+                                       table.append(q1.value(k).toString());
+                                       table.append("</TD>");
+                                    }
+                                    table.append("</TR>");
+
+                                }
+                                table.append("</TABLE>");
+                                ui->outEdit->insertHtml(table);
+                            }
                         }
                     }
                 }
@@ -215,12 +258,31 @@ MainWindow::MainWindow(QWidget *parent) :
                         ui->outEdit->insertHtml("<br><strong>"+q2.lastError().text()+"</strong>");
                     }
                 }
+                if (ui->cbInformRM->isChecked())
+                {
+                    q1.clear();
+                    q1.exec("UPDATE SETTINGS SET VAL = CHNG, CHNG = CHNG + 1  WHERE NAME = 'InformAboutChanges'");
+                }
                 targetdb.commit();
-                targetdb.close();
                 ui->progressBar->setValue((i+1)*halfPercent);
                 ui->outEdit->insertHtml("<br>Обновление базы завершено!<br><br>");
-
+                targetdb.close();
             }
+
+        }
+        if (errors.size() > 0 )
+        {
+            QString text;
+            text.clear();
+            text.append("<BR> <H3>При обновлнии не удалось подключиться к следующим базам данных:</H3><UL>");
+            for (int i = 0; i < errors.size();i++)
+            {
+                text.append("<LI>");
+                text.append(errors.value(i));
+                text.append("</LI>");
+            }
+            text.append("</UL>");
+            ui->outEdit->insertHtml(text);
         }
     }
 
@@ -317,4 +379,5 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->runButton->setEnabled(true);
         importfromfile = false;
         importfromCustomSql = true;
+        ui->tabWidget->setCurrentIndex(0);
     }
