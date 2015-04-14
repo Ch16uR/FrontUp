@@ -21,7 +21,7 @@ QStringList ParserXCH::GetBlobQueries()
     return sqlblobqueries;
 }
 
-QStringList ParserXCH::GetBlobData()
+QByteArrayList ParserXCH::GetBlobData()
 {
     return sqlblobdata;
 }
@@ -85,7 +85,8 @@ void ParserXCH::ParseStringBlob(QString line)
     QString blobtable;
     QString blobfield;
     QString blobid;
-    QString blobdata;
+    QByteArray blobdata;
+    QString blobtemp;
 
     for (int i=0;i<list.size();i++)
     {
@@ -97,7 +98,16 @@ void ParserXCH::ParseStringBlob(QString line)
              blobid = list.value(i);
          if (j == 3)
          {
-             blobdata =  this->BlobToStr(list.value(i));
+             if ((blobtable == "WINREPORTS") || (blobtable == "PRICELABEL"))
+             {
+                  blobdata = this->BlobToStr(list.value(i));
+             }
+             else
+             {
+                 blobtemp = QString::fromLocal8Bit(this->BlobToStr(list.value(i)));
+                 blobdata = blobtemp.toUtf8();
+             }
+
              sqlblobqueries.append("UPDATE "+blobtable+" SET "+blobfield+" = :data WHERE ID = "+blobid);
              sqlblobdata.append(blobdata);
              j =-1;
@@ -107,10 +117,10 @@ void ParserXCH::ParseStringBlob(QString line)
     }
 }
 
-QString ParserXCH::BlobToStr(QString line)
+QByteArray ParserXCH::BlobToStr(QString line)
 {
 
-    QByteArray arr;
+    QByteArray arr;    
     int num_ch;
     char ch;
 
@@ -120,15 +130,17 @@ QString ParserXCH::BlobToStr(QString line)
          num_ch = (ord(line.at(i)) - ord('A'))*16 + (ord(line.at(i+1)) - ord('A'));
          ch = (char) num_ch;
          arr.append(ch);
-
     }
 
-    return QString::fromLocal8Bit(arr);
+    //return QByteArray::fromLocal8Bit(arr);
+
+    return arr;
 
 
 }
 
 int ParserXCH::ord(QChar ch)
 {
+    //return int(ch.toLatin1());
     return int(ch.toLatin1());
 }

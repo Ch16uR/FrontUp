@@ -46,7 +46,7 @@ private:
     bool importfromCustomSql;
     QStringList sqlqueries;
     QStringList sqlblobqueries;
-    QStringList blobdata;
+    QByteArrayList blobdata;
 
     QSqlDatabase localdb;
     QSqlDatabase targetdb;

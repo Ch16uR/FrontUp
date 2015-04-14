@@ -68,7 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         QString filename = QFileDialog::getOpenFileName(this,tr("Выбор файла для импорта"),"",tr("Импорт (*.xch)"));
         ui->PathFileLine->setText(filename);
-
     }
 
     void MainWindow::on_ExitButton_clicked()
@@ -87,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
             sqlqueries = xch->GetSQLQueries();
             sqlblobqueries = xch->GetBlobQueries();
             blobdata = xch->GetBlobData();
+
 
             ui->statusBar->showMessage("Данные будут загружены из файла: "+ filename);
             ui->runButton->setEnabled(true);
@@ -166,7 +166,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         float halfPercent=100/size;
 
-        qDebug() << size;
+
 
         for (int i=0; i<size;i++)
         {
@@ -261,7 +261,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 if (ui->cbInformRM->isChecked())
                 {
                     q1.clear();
-                    q1.exec("UPDATE SETTINGS SET VAL = CHNG, CHNG = CHNG + 1  WHERE NAME = 'InformAboutChanges'");
+                    q1.exec("UPDATE SETTINGS SET VAL = GEN_ID(GCHNG, 1) WHERE NAME = 'InformAboutChanges'");
                 }
                 targetdb.commit();
                 ui->progressBar->setValue((i+1)*halfPercent);
@@ -370,7 +370,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
             if (list.value(i) != "" && list.value(i) != "\n")
             {
-                qDebug() << list.value(i);
+
                 sqlqueries.append(list.value(i));
             }
         }
